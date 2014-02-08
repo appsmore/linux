@@ -29,6 +29,7 @@
 #include <linux/i2c.h>
 #include <linux/module.h>
 #include <linux/mutex.h>
+#include <linux/of.h>
 #include <linux/slab.h>
 
 #include <media/as3645a.h>
@@ -629,6 +630,18 @@ static int as3645a_registered(struct v4l2_subdev *sd)
 	 * state, in case the power rail can't be controlled.
 	 */
 	rval = as3645a_setup(flash);
+	{
+		struct v4l2_control c;
+		c.id = V4L2_CID_FLASH_LED_MODE;
+		c.value = V4L2_FLASH_LED_MODE_TORCH;
+		rval = v4l2_s_ctrl(NULL, &flash->ctrls, &c);
+		printk ("mode %d/%d\n",c.value,rval);
+		c.id = V4L2_CID_FLASH_INDICATOR_INTENSITY;
+		c.value = 100000;
+		rval = v4l2_s_ctrl(NULL, &flash->ctrls, &c);
+		printk ("int %d/%d\n",c.value,rval);
+		msleep(1000);
+	}
 
 power_off:
 	as3645a_set_power(&flash->subdev, 0);
@@ -804,20 +817,39 @@ static int as3645a_init_controls(struct as3645a *flash)
 	return flash->ctrls.error;
 }
 
+static struct  as3645a_platform_data *as3645a_get_pdata(struct device *dev)
+{
+	struct as3645a_platform_data *pdata;
+
+	if (dev->platform_data)
+		return dev->platform_data;
+
+	pdata = devm_kzalloc(dev, sizeof(*pdata), GFP_KERNEL);
+	if (pdata == NULL)
+		return NULL;
+
+	pdata->vref                   = 0, /* 0 volts */
+		pdata->peak                   = 2, /* 1.75A */
+		pdata->ext_strobe             = 1,
+		pdata->flash_max_current      = 320,
+		pdata->torch_max_current      = 60,
+		pdata->timeout_max            = 150000;
+
+
+	return pdata;
+}
+
 static int as3645a_probe(struct i2c_client *client,
 			 const struct i2c_device_id *devid)
 {
 	struct as3645a *flash;
 	int ret;
 
-	if (client->dev.platform_data == NULL)
-		return -ENODEV;
-
 	flash = devm_kzalloc(&client->dev, sizeof(*flash), GFP_KERNEL);
 	if (flash == NULL)
 		return -ENOMEM;
 
-	flash->pdata = client->dev.platform_data;
+	flash->pdata = as3645a_get_pdata(&client->dev);
 
 	v4l2_i2c_subdev_init(&flash->subdev, client, &as3645a_ops);
 	flash->subdev.internal_ops = &as3645a_internal_ops;
@@ -836,6 +868,8 @@ static int as3645a_probe(struct i2c_client *client,
 	mutex_init(&flash->power_lock);
 
 	flash->led_mode = V4L2_FLASH_LED_MODE_NONE;
+
+	ret = as3645a_registered(&flash->subdev);
 
 done:
 	if (ret < 0)
@@ -857,6 +891,11 @@ static int as3645a_remove(struct i2c_client *client)
 	return 0;
 }
 
+static const struct of_device_id as3645a_of_table[] = {
+	{ .compatible = "ams,as3645a", },
+	{ },
+};
+
 static const struct i2c_device_id as3645a_id_table[] = {
 	{ AS3645A_NAME, 0 },
 	{ },
@@ -870,6 +909,7 @@ static const struct dev_pm_ops as3645a_pm_ops = {
 
 static struct i2c_driver as3645a_i2c_driver = {
 	.driver	= {
+		.of_match_table = as3645a_of_table,
 		.name = AS3645A_NAME,
 		.pm   = &as3645a_pm_ops,
 	},

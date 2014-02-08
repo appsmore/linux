@@ -103,11 +103,17 @@
 			};
 		};
 	};
+
+	as3645a_1: as3645a@30 {
+		compatible = "ams,as3645a";
+		reg = <0x30>;
+	};
 };
 
 &omap3_isp {
 	vdd-csiphy1-supply = <&vaux2>;
 	vdd-csiphy2-supply = <&vaux2>;
+	flash = <&as3645a_1>;
 	ports {
 		port@1 {
 			reg = <1>;
@@ -121,6 +127,7 @@
 			};
 		};
 	};
+
 
 //	port@2 {
 //		data-lanes = <2>;
