@@ -200,6 +200,8 @@ static int twl4030reg_enable(struct regulator_dev *rdev)
 
 	grp |= P1_GRP_4030;
 
+	printk("enable %s\n",rdev->desc->name);
+
 	ret = twlreg_write(info, TWL_MODULE_PM_RECEIVER, VREG_GRP, grp);
 
 	return ret;
@@ -460,6 +462,8 @@ static int
 twl4030ldo_set_voltage_sel(struct regulator_dev *rdev, unsigned selector)
 {
 	struct twlreg_info	*info = rdev_get_drvdata(rdev);
+
+	printk("regulator %s, voltage %d\n",rdev->desc->name,selector);
 
 	return twlreg_write(info, TWL_MODULE_PM_RECEIVER, VREG_VOLTAGE,
 			    selector);
