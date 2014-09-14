@@ -1464,6 +1464,8 @@ static int __map_sg_chunk(struct device *dev, struct scatterlist *sg,
 	struct scatterlist *s;
 	int prot;
 
+	dev_dbg(dev, "map size %d\n", size);
+
 	size = PAGE_ALIGN(size);
 	*handle = DMA_ERROR_CODE;
 

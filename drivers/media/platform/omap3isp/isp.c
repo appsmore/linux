@@ -2407,6 +2407,14 @@ static int isp_probe(struct platform_device *pdev)
 		return -ENOMEM;
 	}
 
+	pdev->dev.dma_parms = devm_kzalloc(&pdev->dev,
+					   sizeof(*pdev->dev.dma_parms),
+					   GFP_KERNEL);
+	if (!pdev->dev.dma_parms)
+		return -ENOMEM;
+
+	pdev->dev.dma_parms->max_segment_size = UINT_MAX;
+
 	if (IS_ENABLED(CONFIG_OF) && pdev->dev.of_node) {
 		ret = isp_of_parse_nodes(&pdev->dev, &isp->notifier);
 		if (ret < 0)

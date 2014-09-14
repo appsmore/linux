@@ -74,7 +74,10 @@ static unsigned long vb2_dc_get_contiguous_size(struct sg_table *sgt)
 	unsigned int i;
 	unsigned long size = 0;
 
+	printk("ents %d\n", sgt->nents);
+
 	for_each_sg(sgt->sgl, s, sgt->nents, i) {
+		printk("entry %d, address %p, len %d\n", i, sg_dma_address(s), sg_dma_len(s));
 		if (sg_dma_address(s) != expected)
 			break;
 		expected = sg_dma_address(s) + sg_dma_len(s);
@@ -665,6 +668,10 @@ static void *vb2_dc_get_userptr(void *alloc_ctx, unsigned long vaddr,
 	kfree(pages);
 	pages = NULL;
 
+	printk("offset %d\n", offset);
+	printk("dev %p, %s\n", buf->dev, dev_name(buf->dev));
+	printk("sgl addr %p len %p offset %d\n", sg_dma_address(sgt->sgl),
+	       sg_dma_len(sgt->sgl), sgt->sgl->offset);
 	/*
 	 * No need to sync to the device, this will happen later when the
 	 * prepare() memop is called.
